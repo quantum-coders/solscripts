@@ -52,7 +52,7 @@ function loadUserKeyPair() {
 async function main() {
     try {
         const userKeyPair = loadUserKeyPair();
-        const amount = 1200
+        const amount = 1
         const lockupPeriodInDays = 30; // 1 day
         const transactionId = await BonkService.lockBonk(userKeyPair, amount, lockupPeriodInDays); // Convert days to months
         console.log("Transaction ID:", transactionId);

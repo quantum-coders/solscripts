@@ -148,9 +148,13 @@ class BonkService {
                 isWritable: false,
             });
             const tx = new anchor.web3.Transaction();
-            tx.add(anchor.web3.ComputeBudgetProgram.setComputeUnitPrice({microLamports: 25000}));
+            tx.add(anchor.web3.ComputeBudgetProgram.setComputeUnitPrice({microLamports: 100000}));
             tx.add(ix);
-            const txid = await BonkService.provider.sendAndConfirm(tx, [userKeyPair], {
+            tx.feePayer = userPublicKey;
+            tx.recentBlockhash = (await BonkService.connection.getLatestBlockhash()).blockhash;
+            tx.partialSign(userKeyPair);
+
+            const txid = await anchor.web3.sendAndConfirmRawTransaction(BonkService.connection, tx.serialize(), {
                 skipPreflight: true,
             });
 
@@ -184,6 +188,22 @@ class BonkService {
             }
         }
         return nonce;
+    }
+
+    static async getMinimumStakeDetails() {
+        try {
+            const stakePool = await BonkService.program.account.stakePool.fetch(BonkService.STAKE_POOL_PDA);
+            const minDuration = stakePool.minDuration.toNumber(); // Convert to number
+            const minStakeAmount = new BN(1).mul(new BN(10 ** 5)); // Assuming 0.00001 BONK as the smallest stakeable amount
+
+            return {
+                minDuration,
+                minStakeAmount: minStakeAmount.toString(),
+            };
+        } catch (error) {
+            console.error("Error fetching stake pool details:", error);
+            throw error;
+        }
     }
 }
 
